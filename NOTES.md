@@ -496,6 +496,17 @@ Three further fixes from the same evidence:
    **106** times because OUR fx identity is inverted (usd = foreign ÷
    rate, not × rate). D2 never fired at all.
 
+### Submission 1 — score 99.83 (run_5b4dc420b27a)
+posting 29.98/30 · checkpoints 39.98/40 · resilience 14.87/15 ·
+**liveness 10/10** · **reconciliation 5/5**. 4,000 events delivered,
+4,000 posted, 9 checkpoints all on time, **zero errors and zero
+reconnects** across the full hour.
+
+The graded feed is five times the practice length with far more replay,
+and the score matched the top of the practice leaderboard — so the build
+holds at scale, not just on the short feed. Nothing was changed between
+practice 3 and this run.
+
 ### Practice run 3 — score 99.71 (run_51271ec33678)
 posting 29.92/30 · **checkpoints 40.00/40** · resilience 14.79/15 ·
 **liveness 10/10** · **reconciliation 5/5**. 772 of 772 graded events
