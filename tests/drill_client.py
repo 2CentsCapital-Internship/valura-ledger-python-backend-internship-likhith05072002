@@ -261,9 +261,37 @@ def drill_burst() -> None:
           arena.rejected_413 == 0, f"{arena.rejected_413} requests over the cap")
 
 
+def drill_checkpoint_rewind() -> None:
+    """A checkpoint describes the book AT ITS OFFSET. The server rewinds
+    mid-run and re-delivers the same checkpoint_request; answering it a
+    second time from our now-advanced state is strictly wrong — practice
+    run 1 answered cp_postchaos three times and scored 0.687, 0.314, then
+    0.099 as the state drifted past the point being asked about. The
+    first answer must be re-sent verbatim."""
+    print("\nDrill 5: re-delivered checkpoint — the first answer is re-sent")
+    deposits = make_deposits(40)
+    cp = {"offset": 20, "event_id": "evt_cp_drill",
+          "type": "checkpoint_request",
+          "payload": {"checkpoint_id": "cpX", "respond_within_seconds": 60}}
+    # The rewind re-serves the checkpoint along with the events around it.
+    scenario = (deposits[:20] + [cp] + deposits[20:30]
+                + [reset_marker(10)] + deposits[10:])
+
+    with MockArena(scenario) as arena:
+        proc, took, timed_out = run_client(arena.port, "practice",
+                                           new_log_dir())
+    reps = list(arena.received_checkpoints)
+    check("the checkpoint was delivered more than once",
+          len(reps) >= 2, f"got {len(reps)} replies")
+    bodies = {json.dumps(r, sort_keys=True) for r in reps}
+    check("every reply is the FIRST answer, byte-identical",
+          len(bodies) == 1, f"{len(bodies)} distinct replies")
+
+
 def main() -> int:
     t0 = time.time()
-    for drill in (drill_basic, drill_reset, drill_409, drill_burst):
+    for drill in (drill_basic, drill_reset, drill_409, drill_burst,
+                  drill_checkpoint_rewind):
         try:
             drill()
         except Exception as exc:        # a broken drill is a failed drill
