@@ -106,7 +106,13 @@ class Book:
         self.refunded: set = set()        # fee source ids already refunded
         self.withdrawals: dict = {}       # wid -> {customer_id, amount, status}
         self.orders: dict = {}            # oid -> lifecycle dict incl. holds + route
-        self.trades: dict = {}            # tid -> {side, principal, cid, settled}
+        self.trades: dict = {}            # tid -> {side, principal, cid, settled, src}
+        # Every trade_id a fill has EVER claimed. Deliberately separate
+        # from `trades`, which a reversal may empty: for D8 the question
+        # is "has this id ever been used", and practice run 2 proved the
+        # arena agrees — it rejected a duplicate fill whose original had
+        # been reversed, so a reversal does not free the id for reuse.
+        self.trade_ids_seen: set = set()
         # The lot book (decision 7): lots are NEVER deleted — fully-consumed
         # lots stay as zero-qty zombies holding their global FIFO sequence so
         # Phase 5 sell-reversals restore portions exactly in place, and
@@ -138,7 +144,7 @@ class Book:
     _STATE_KEYS = ("balances", "accounts_touched", "seen", "todo", "events",
                    "fees", "refunded", "withdrawals", "orders", "trades",
                    "lots", "lot_index", "lot_seq", "merge_seq", "quarantine",
-                   "customers_seen")
+                   "customers_seen", "trade_ids_seen")
 
     def _dump_state(self) -> bytes:
         return pickle.dumps({k: getattr(self, k) for k in self._STATE_KEYS},
@@ -646,7 +652,11 @@ class Book:
         # them; on that feed our predicate fired on precisely those two
         # events and nothing else (zero false positives, zero misses).
         # Rejected HERE, in the validation block, so nothing is mutated.
-        if tid in self.trades and detectors.mode("D8") == "ARMED":
+        # Checked against the EVER-USED set, not the live trades store: a
+        # reversal of the original fill empties `trades` but does not make
+        # the id reusable, and practice run 2 caught exactly that case —
+        # fill, settle, reverse, then a duplicate the arena still rejects.
+        if tid in self.trade_ids_seen and detectors.mode("D8") == "ARMED":
             raise Rejected("D8: trade_id already used by an earlier fill")
         if broker not in tariff.TARIFF:
             raise Rejected("unknown broker")
@@ -749,8 +759,11 @@ class Book:
                 self._lot_ops.append(("consume", lot_id, take, relieved,
                                       l["split_mult"]))
 
+        # Claim the id permanently — a reversal of this fill may empty
+        # `trades`, but the id is spent either way (D8).
+        self.trade_ids_seen.add(tid)
         if tid in self.trades:
-            # D8 observe-only: duplicate trade_id across distinct fills.
+            # Reached only with D8 disarmed: observe and post.
             self.quarantine.append(("dup_trade_id", tid, ev["event_id"]))
         else:
             # `src` records WHICH fill owns this trade: reversing a
