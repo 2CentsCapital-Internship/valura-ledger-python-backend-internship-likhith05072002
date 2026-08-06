@@ -496,6 +496,19 @@ Three further fixes from the same evidence:
    **106** times because OUR fx identity is inverted (usd = foreign ÷
    rate, not × rate). D2 never fired at all.
 
+### FINAL RUN — complete (run_5a17bf4023d5)
+6,000 events received, **6,000 posted** (complete coverage), 10
+checkpoints **all accepted and on time**, **0 reconnects, 0 errors**.
+The arena dropped the connection once and rewound to offset 2,980; the
+re-delivered events changed nothing and `cp_postchaos` came back on
+time. Score withheld until submissions close, per the tier.
+
+Post-run audit of the banked feed: all seven referees clean (balance
+law, wallet oracle, market identities, payable cent-audit, the
+independent FIFO oracle, cold replay, ring path), no unimplemented event
+types, every checkpoint's trial balance summing to exactly 0.00, and 171
+duplicate-trade_id defects rejected.
+
 ### Submission 1 — score 99.83 (run_5b4dc420b27a)
 posting 29.98/30 · checkpoints 39.98/40 · resilience 14.87/15 ·
 **liveness 10/10** · **reconciliation 5/5**. 4,000 events delivered,
