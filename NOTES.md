@@ -496,6 +496,15 @@ Three further fixes from the same evidence:
    **106** times because OUR fx identity is inverted (usd = foreign ÷
    rate, not × rate). D2 never fired at all.
 
+### Practice run 3 — score 99.71 (run_51271ec33678)
+posting 29.92/30 · **checkpoints 40.00/40** · resilience 14.79/15 ·
+**liveness 10/10** · **reconciliation 5/5**. 772 of 772 graded events
+correct, and all seven checkpoints — including both as-of queries and
+the post-rewind one — scored a clean 1.0000 on every part.
+
+Progression: 77.52 → 96.93 → 99.71, and every step came from reading the
+arena's own diagnostics rather than guessing.
+
 ### Practice run 2 — D8 armed
 Postings 100% correct through 388 graded events (run 1 had failures long
 before this point), and cp0 scored a clean **1.0000 on every part** —
